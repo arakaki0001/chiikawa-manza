@@ -284,25 +284,32 @@
                 /* 商品名 */
                 width: 100%;
                 order: 1;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid var(--primary-light);
             }
 
             .forecast-table tbody td:nth-child(1) .product-name {
-                display: flex;
+                display: flex !important;
                 flex-direction: column;
             }
 
             .forecast-table tbody td:nth-child(1) .product-name .name {
-                font-size: 0.95rem;
+                font-size: 0.9rem;
                 font-weight: 600;
                 line-height: 1.4;
                 display: block !important;
                 visibility: visible !important;
+                color: var(--text-primary);
+                word-break: break-all;
+                overflow-wrap: break-word;
             }
 
             .forecast-table tbody td:nth-child(1) .product-name .jan {
-                font-size: 0.75rem;
+                font-size: 0.7rem;
                 color: var(--text-secondary);
+                font-family: monospace;
+                margin-top: 0.25rem;
             }
 
             .forecast-table tbody td:nth-child(2) {
@@ -311,7 +318,7 @@
                 margin-right: auto;
             }
 
-            .forecast-table tbody td:nth-child(9) {
+            .forecast-table tbody td:nth-child(8) {
                 /* ステータス */
                 order: 3;
             }
@@ -359,10 +366,24 @@
                 font-weight: normal;
             }
 
-            .forecast-table tbody td:nth-child(6),
-            .forecast-table tbody td:nth-child(7),
-            .forecast-table tbody td:nth-child(8) {
-                /* 日付列・6ヶ月後 */
+            /* 在庫切れ予測日を表示 */
+            .forecast-table tbody td:nth-child(6) {
+                width: 100%;
+                order: 7;
+                text-align: left !important;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid var(--primary-light);
+            }
+
+            .forecast-table tbody td:nth-child(6)::before {
+                content: '📅 在庫切れ予測日: ';
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+            }
+
+            /* 6ヶ月後在庫は非表示 */
+            .forecast-table tbody td:nth-child(7) {
                 display: none;
             }
 
@@ -426,20 +447,6 @@
 
         <!-- 設定パネル -->
         <section class="settings-panel">
-            <div class="setting-group">
-                <label>リードタイム（発注〜納品）</label>
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                    <input type="number" id="leadTime" value="14" min="1" max="90">
-                    <span>日</span>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>安全在庫日数</label>
-                <div style="display:flex;align-items:center;gap:0.5rem;">
-                    <input type="number" id="safetyDays" value="7" min="0" max="30">
-                    <span>日</span>
-                </div>
-            </div>
             <div class="filter-tabs">
                 <button class="filter-tab active" data-filter="all">すべて</button>
                 <button class="filter-tab" data-filter="critical">🚨 緊急</button>
@@ -464,14 +471,13 @@
                         <th>日平均販売</th>
                         <th>在庫切れまで</th>
                         <th>在庫切れ予測日</th>
-                        <th>発注推奨日</th>
                         <th>6ヶ月後在庫</th>
                         <th>ステータス</th>
                     </tr>
                 </thead>
                 <tbody id="forecastBody">
                     <tr>
-                        <td colspan="9" class="loading">読み込み中...</td>
+                        <td colspan="8" class="loading">読み込み中...</td>
                     </tr>
                 </tbody>
             </table>
@@ -511,8 +517,9 @@
         }
 
         function updateForecasts() {
-            const leadTime = parseInt(document.getElementById('leadTime').value) || 14;
-            const safetyDays = parseInt(document.getElementById('safetyDays').value) || 7;
+            // 固定値を使用（リードタイム14日、安全在庫7日）
+            const leadTime = 14;
+            const safetyDays = 7;
 
             forecasts = getAllForecasts(leadTime, safetyDays);
             updateStats();
@@ -558,8 +565,6 @@
 
             tbody.innerHTML = filtered.map(f => {
                 const stockoutDateStr = f.stockoutDate ? formatDate(f.stockoutDate) : '-';
-                const reorderDateStr = f.reorderDate ? formatDate(f.reorderDate) : '-';
-                const isReorderNow = f.reorderDate && f.reorderDate <= new Date();
                 const timelineWidth = Math.min(100, Math.max(5, (f.daysUntilStockout / 180) * 100));
 
                 return `
@@ -579,10 +584,7 @@
                 <div class="timeline-fill ${f.status}" style="width:${timelineWidth}%"></div>
               </div>
             </td>
-            <td style="text-align:center;">${stockoutDateStr}</td>
-            <td style="text-align:center;" class="${isReorderNow ? 'reorder-now' : ''}">
-              ${isReorderNow ? '🚨 今すぐ発注' : reorderDateStr}
-            </td>
+            <td class="stockout-date-cell" style="text-align:center;">${stockoutDateStr}</td>
             <td style="text-align:center;font-weight:600;">${f.stock6MonthsLater.toLocaleString()}</td>
             <td><span class="status-badge ${f.status}">${getStatusLabel(f.status)}</span></td>
           </tr>
