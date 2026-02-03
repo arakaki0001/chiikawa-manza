@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>データ更新 | ちいかわ在庫管理システム</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-full);
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .upload-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .drop-zone {
+            border: 3px dashed var(--primary-light);
+            border-radius: var(--radius-lg);
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            background: var(--bg-main);
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .drop-zone .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .drop-zone p {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone .filename {
+            display: none;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 1rem;
+        }
+
+        .drop-zone.has-file .filename {
+            display: block;
+        }
+
+        .upload-btn {
+            display: block;
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-full);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .upload-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-info {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+        }
+
+        .status-info.success {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status-info.error {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+
+        .status-info.info {
+            background: var(--primary-light);
+            color: var(--text-primary);
+        }
+
+        .last-update {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .data-preview {
+            margin-top: 1.5rem;
+            max-height: 300px;
+            overflow: auto;
+            font-size: 0.85rem;
+        }
+
+        .data-preview table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-preview th,
+        .data-preview td {
+            padding: 0.5rem;
+            border: 1px solid var(--primary-light);
+            text-align: left;
+        }
+
+        .data-preview th {
+            background: var(--primary-light);
+            position: sticky;
+            top: 0;
+        }
+
+        .instructions {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .instructions h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .instructions ol {
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .instructions li {
+            margin-bottom: 0.75rem;
+        }
+
+        .instructions code {
+            background: var(--primary-light);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .upload-card {
+                padding: 1.25rem;
+            }
+
+            .upload-card h2 {
+                font-size: 1.1rem;
+            }
+
+            .drop-zone {
+                padding: 2rem 1rem;
+            }
+
+            .drop-zone .icon {
+                font-size: 2.5rem;
+            }
+
+            .drop-zone p {
+                font-size: 0.9rem;
+            }
+
+            .instructions {
+                padding: 1.25rem;
+            }
+
+            .instructions ol {
+                padding-left: 1.25rem;
+            }
+
+            .data-preview {
+                max-height: 200px;
+            }
+
+            .data-preview th,
+            .data-preview td {
+                padding: 0.4rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">📤</span>
+                <div>
+                    <h1>データ更新</h1>
+                    <span class="logo-subtitle">万座毛ショップ</span>
+                </div>
+            </div>
+            <div class="header-info">
+                <a href="index.html" class="nav-link">📦 在庫管理</a>
+                <a href="sales.html" class="nav-link">📈 売上推移</a>
+                <a href="forecast.html" class="nav-link">🔮 在庫予測</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main">
+        <!-- アップロードセクション -->
+        <section class="upload-section">
+            <!-- 売上CSV -->
+            <div class="upload-card">
+                <h2>📊 売上データ（CSV）</h2>
+                <div class="drop-zone" id="salesDropZone">
+                    <div class="icon">📁</div>
+                    <p>CSVファイルをドラッグ&ドロップ</p>
+                    <p>または クリックして選択</p>
+                    <span class="filename" id="salesFilename"></span>
+                </div>
+                <input type="file" class="file-input" id="salesFileInput" accept=".csv">
+                <button class="upload-btn" id="salesUploadBtn" disabled>データを更新</button>
+                <div class="status-info info" id="salesStatus">
+                    <span id="salesLastUpdate">最終更新: 未読み込み</span>
+                </div>
+                <div class="data-preview" id="salesPreview"></div>
+            </div>
+
+            <!-- 棚卸表Excel -->
+            <div class="upload-card">
+                <h2>📋 棚卸表（Excel）</h2>
+                <div class="drop-zone" id="inventoryDropZone">
+                    <div class="icon">📁</div>
+                    <p>Excelファイルをドラッグ&ドロップ</p>
+                    <p>または クリックして選択</p>
+                    <span class="filename" id="inventoryFilename"></span>
+                </div>
+                <input type="file" class="file-input" id="inventoryFileInput" accept=".xlsx,.xls">
+                <button class="upload-btn" id="inventoryUploadBtn" disabled>データを更新</button>
+                <div class="status-info info" id="inventoryStatus">
+                    <span id="inventoryLastUpdate">最終更新: 未読み込み</span>
+                </div>
+                <div class="data-preview" id="inventoryPreview"></div>
+            </div>
+        </section>
+
+        <!-- 使い方 -->
+        <section class="instructions">
+            <h3>📖 使い方</h3>
+            <ol>
+                <li>Squareからエクスポートした売上CSVファイル（<code>商品-YYYY-MM-DD.csv</code>）をドラッグ&ドロップ</li>
+                <li>最新の棚卸表Excelファイルをドラッグ&ドロップ</li>
+                <li>「データを更新」ボタンをクリック</li>
+                <li>データはブラウザのローカルストレージに保存されます</li>
+            </ol>
+            <div class="status-info info" style="margin-top:1rem;">
+                💡 <strong>ヒント:</strong> 週に1回程度、最新の売上データをアップロードすると、在庫予測の精度が向上します。
+            </div>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>🐾 ちいかわ在庫管理システム v1.0 | 万座毛ショップ</p>
+    </footer>
+
+    <script>
+        // 売上CSVアップロード
+        let salesFile = null;
+        let inventoryFile = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDropZone('salesDropZone', 'salesFileInput', 'salesFilename', 'salesUploadBtn', (file) => { salesFile = file; });
+            setupDropZone('inventoryDropZone', 'inventoryFileInput', 'inventoryFilename', 'inventoryUploadBtn', (file) => { inventoryFile = file; });
+
+            document.getElementById('salesUploadBtn').addEventListener('click', processSalesCSV);
+            document.getElementById('inventoryUploadBtn').addEventListener('click', processInventoryExcel);
+
+            loadLastUpdateTimes();
+        });
+
+        function setupDropZone(zoneId, inputId, filenameId, btnId, onFileSelect) {
+            const zone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+            const filename = document.getElementById(filenameId);
+            const btn = document.getElementById(btnId);
+
+            if (!zone || !input || !filename || !btn) return;
+
+            zone.addEventListener('click', () => input.click());
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    selectFile(file);
+                }
+            });
+
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    selectFile(file);
+                }
+            });
+
+            function selectFile(file) {
+                filename.textContent = '📄 ' + file.name;
+                zone.classList.add('has-file');
+                btn.disabled = false;
+                onFileSelect(file);
+            }
+        }
+
+        function processSalesCSV() {
+            if (!salesFile) return;
+
+            const status = document.getElementById('salesStatus');
+            const preview = document.getElementById('salesPreview');
+
+            if (!status || !preview) {
+                console.error('DOM elements not found');
+                return;
+            }
+
+            status.className = 'status-info info';
+            status.innerHTML = '⏳ 処理中...';
+
+            // まずUTF-8で試し、失敗したらShift-JISで再試行
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let content = e.target.result;
+
+                    // 文字化けチェック（日本語が含まれていなければShift-JISで再読み込み）
+                    if (!content.includes('日付') && !content.includes('商品')) {
+                        // Shift-JISで再試行
+                        const reader2 = new FileReader();
+                        reader2.onload = (e2) => {
+                            parseCSVContent(e2.target.result, status, preview);
+                        };
+                        reader2.onerror = () => {
+                            status.className = 'status-info error';
+                            status.innerHTML = '❌ ファイルの読み込みに失敗しました';
+                        };
+                        reader2.readAsText(salesFile, 'Shift_JIS');
+                        return;
+                    }
+
+                    parseCSVContent(content, status, preview);
+                } catch (err) {
+                    status.className = 'status-info error';
+                    status.innerHTML = '❌ ファイルの解析に失敗しました: ' + err.message;
+                }
+            };
+            reader.onerror = () => {
+                status.className = 'status-info error';
+                status.innerHTML = '❌ ファイルの読み込みに失敗しました';
+            };
+            reader.readAsText(salesFile, 'UTF-8');
+        }
+
+        function parseCSVContent(content, status, preview) {
+            try {
+                const lines = content.split(/\r?\n/).filter(line => line.trim());
+
+                if (lines.length < 2) {
+                    throw new Error('データが少なすぎます');
+                }
+
+                const headers = lines[0].split('\t');
+
+                // 日付列と純売上高列のインデックスを探す
+                let dateIndex = 0;
+                let salesIndex = 11; // デフォルト
+
+                for (let i = 0; i < headers.length; i++) {
+                    if (headers[i].includes('日付')) dateIndex = i;
+                    if (headers[i].includes('純売上高')) salesIndex = i;
+                }
+
+                // 新しいCSVから日付と売上を解析
+                const newDailySales = {};
+                let validRows = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const fields = lines[i].split('\t');
+                    const date = fields[dateIndex] || '';
+                    const salesStr = (fields[salesIndex] || '').replace(/[¥,\"]/g, '');
+                    const sales = parseInt(salesStr) || 0;
+
+                    if (date && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        if (!newDailySales[date]) newDailySales[date] = 0;
+                        newDailySales[date] += sales;
+                        validRows++;
+                    }
+                }
+
+                if (validRows === 0) {
+                    throw new Error('有効なデータ行が見つかりませんでした');
+                }
+
+                // 既存データを読み込み
+                const existingData = localStorage.getItem('chiikawa_sales_data');
+                let mergedSales = {};
+                let addedDates = 0;
+                let updatedDates = 0;
+
+                if (existingData) {
+                    mergedSales = JSON.parse(existingData);
+                }
+
+                // マージ（新しいデータで上書き、重複は新しい方を優先）
+                const newDates = Object.keys(newDailySales);
+                newDates.forEach(date => {
+                    if (mergedSales[date] !== undefined) {
+                        updatedDates++;
+                    } else {
+                        addedDates++;
+                    }
+                    mergedSales[date] = newDailySales[date];
+                });
+
+                // ローカルストレージに保存
+                localStorage.setItem('chiikawa_sales_data', JSON.stringify(mergedSales));
+                localStorage.setItem('chiikawa_sales_updated', new Date().toISOString());
+
+                // プレビュー表示（マージ後のデータ）
+                const sortedDates = Object.keys(mergedSales).sort().slice(-10);
+                const totalDays = Object.keys(mergedSales).length;
+                const totalSales = Object.values(mergedSales).reduce((a, b) => a + b, 0);
+
+                preview.innerHTML = `
+                    <table>
+                        <thead><tr><th>日付</th><th>売上</th></tr></thead>
+                        <tbody>
+                            ${sortedDates.map(d => `<tr><td>${d}</td><td>¥${mergedSales[d].toLocaleString()}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                    <p style="margin-top:1rem;color:var(--text-secondary);">
+                        ※ 直近10日分を表示 | 全${totalDays}日分 | 合計: ¥${totalSales.toLocaleString()}
+                    </p>
+                `;
+
+                status.className = 'status-info success';
+                let message = `✅ ${Object.keys(newDailySales).length}日分のデータを処理`;
+                if (updatedDates > 0) {
+                    message += `（${updatedDates}日更新, ${addedDates}日追加）`;
+                }
+                status.innerHTML = message;
+
+                loadLastUpdateTimes();
+            } catch (err) {
+                status.className = 'status-info error';
+                status.innerHTML = '❌ ファイルの解析に失敗しました: ' + err.message;
+            }
+        }
+
+        function processInventoryExcel() {
+            if (!inventoryFile) return;
+
+            const status = document.getElementById('inventoryStatus');
+            const preview = document.getElementById('inventoryPreview');
+
+            if (!status || !preview) {
+                console.error('DOM elements not found');
+                return;
+            }
+
+            status.className = 'status-info info';
+            status.innerHTML = '⏳ 処理中...';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    // データ行を抽出（ヘッダーを探す）
+                    let headerRow = -1;
+                    for (let i = 0; i < json.length; i++) {
+                        if (json[i] && json[i][0] === 'No.' && json[i][1] === '商品名') {
+                            headerRow = i;
+                            break;
+                        }
+                    }
+
+                    if (headerRow === -1) {
+                        throw new Error('棚卸表のフォーマットを認識できませんでした');
+                    }
+
+                    const inventoryItems = [];
+                    for (let i = headerRow + 1; i < json.length; i++) {
+                        const row = json[i];
+                        if (row && row[0] && !String(row[0]).includes('合計')) {
+                            inventoryItems.push({
+                                no: row[0],
+                                name: row[1],
+                                stock: parseInt(String(row[2]).replace(/,/g, '')) || 0,
+                                cost: row[3],
+                                amount: row[4]
+                            });
+                        }
+                    }
+
+                    // ローカルストレージに保存
+                    localStorage.setItem('chiikawa_inventory_data', JSON.stringify(inventoryItems));
+                    localStorage.setItem('chiikawa_inventory_updated', new Date().toISOString());
+
+                    // プレビュー表示
+                    preview.innerHTML = `
+                        <table>
+                            <thead><tr><th>No.</th><th>商品名</th><th>在庫数</th></tr></thead>
+                            <tbody>
+                                ${inventoryItems.slice(0, 10).map(item => `<tr><td>${item.no}</td><td>${item.name}</td><td>${item.stock}</td></tr>`).join('')}
+                            </tbody>
+                        </table>
+                        <p style="margin-top:1rem;color:var(--text-secondary);">※ 先頭10件を表示（全${inventoryItems.length}件）</p>
+                    `;
+
+                    status.className = 'status-info success';
+                    status.innerHTML = `✅ ${inventoryItems.length}件の在庫データを読み込みました`;
+
+                    loadLastUpdateTimes();
+                } catch (err) {
+                    status.className = 'status-info error';
+                    status.innerHTML = '❌ ファイルの解析に失敗しました: ' + err.message;
+                }
+            };
+            reader.onerror = () => {
+                status.className = 'status-info error';
+                status.innerHTML = '❌ ファイルの読み込みに失敗しました';
+            };
+            reader.readAsArrayBuffer(inventoryFile);
+        }
+
+        function loadLastUpdateTimes() {
+            const salesUpdated = localStorage.getItem('chiikawa_sales_updated');
+            const inventoryUpdated = localStorage.getItem('chiikawa_inventory_updated');
+
+            const salesLastUpdateEl = document.getElementById('salesLastUpdate');
+            const inventoryLastUpdateEl = document.getElementById('inventoryLastUpdate');
+
+            if (salesUpdated && salesLastUpdateEl) {
+                const date = new Date(salesUpdated);
+                salesLastUpdateEl.textContent =
+                    `最終更新: ${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP')}`;
+            }
+
+            if (inventoryUpdated && inventoryLastUpdateEl) {
+                const date = new Date(inventoryUpdated);
+                inventoryLastUpdateEl.textContent =
+                    `最終更新: ${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP')}`;
+            }
+        }
+    </script>
+</body>
+
+</html>

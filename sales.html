@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>売上推移 | ちいかわ在庫管理システム</title>
+    <meta name="description" content="万座毛ショップの売上推移グラフ - 月別・日別">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .month-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .month-tab {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid var(--primary-light);
+            border-radius: var(--radius-full);
+            background: var(--bg-main);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .month-tab:hover {
+            background: var(--primary-light);
+        }
+
+        .month-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--text-light);
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-full);
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .data-source {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--primary-light);
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+        }
+
+        .data-source .badge {
+            padding: 0.25rem 0.75rem;
+            background: var(--accent);
+            color: white;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+        }
+
+        .data-source .badge.static {
+            background: #888;
+        }
+
+        .summary-box {
+            display: flex;
+            justify-content: space-around;
+            padding: 1rem;
+            background: var(--bg-main);
+            border-radius: var(--radius-md);
+            margin-top: 1rem;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-item .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .summary-item .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">📈</span>
+                <div>
+                    <h1>売上推移</h1>
+                    <span class="logo-subtitle">万座毛ショップ</span>
+                </div>
+            </div>
+            <div class="header-info">
+                <a href="index.html" class="nav-link">📦 在庫管理</a>
+                <a href="forecast.html" class="nav-link">🔮 在庫予測</a>
+                <a href="upload.html" class="nav-link">📤 データ更新</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main">
+        <!-- データソース表示 -->
+        <div class="data-source" id="dataSource">
+            <span class="badge static">静的データ</span>
+            <span>初期データを使用中（CSVをアップロードすると最新データを表示）</span>
+        </div>
+
+        <!-- ダッシュボード -->
+        <section class="dashboard">
+            <div class="stat-card total">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">総売上高</div>
+                <div class="stat-value" id="totalSales">-</div>
+                <div class="stat-change" id="totalDays">-日間</div>
+            </div>
+            <div class="stat-card value">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">日平均売上</div>
+                <div class="stat-value" id="avgSales">-</div>
+            </div>
+            <div class="stat-card categories">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-label">最高売上日</div>
+                <div class="stat-value" id="maxSales">-</div>
+                <div class="stat-change" id="maxDate">-</div>
+            </div>
+            <div class="stat-card low">
+                <div class="stat-icon">📉</div>
+                <div class="stat-label">最低売上日</div>
+                <div class="stat-value" id="minSales">-</div>
+                <div class="stat-change" id="minDate">-</div>
+            </div>
+        </section>
+
+        <!-- 月別タブ -->
+        <div class="month-tabs" id="monthTabs">
+            <!-- JavaScriptで生成 -->
+        </div>
+
+        <!-- グラフエリア -->
+        <section class="chart-grid">
+            <!-- 日別グラフ -->
+            <div class="chart-card full-width">
+                <h3>📅 <span id="chartTitle">日別売上</span></h3>
+                <div class="chart-container">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <div class="summary-box" id="summaryBox">
+                    <div class="summary-item">
+                        <div class="label">月間合計</div>
+                        <div class="value" id="monthTotal">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">日数</div>
+                        <div class="value" id="monthDays">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">日平均</div>
+                        <div class="value" id="monthAvg">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月別比較 -->
+            <div class="chart-card">
+                <h3>📊 月別売上比較</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 曜日別 -->
+            <div class="chart-card">
+                <h3>📅 曜日別平均売上</h3>
+                <div class="chart-container">
+                    <canvas id="weekdayChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>🐾 ちいかわ在庫管理システム v1.0 | 万座毛ショップ</p>
+    </footer>
+
+    <!-- スクリプト -->
+    <script src="sales_data.js"></script>
+    <script>
+        // Chart.js設定
+        Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
+        Chart.defaults.color = '#4A4A4A';
+
+        // データ
+        let allSalesData = [];
+        let monthlyData = {};
+        let currentMonth = null;
+        let dailyChart, monthlyChart, weekdayChart;
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            createMonthTabs();
+            updateStats();
+            createCharts();
+        });
+
+        // データ読み込み（ローカルストレージ優先）
+        function loadData() {
+            const storedData = localStorage.getItem('chiikawa_sales_data');
+            const storedUpdated = localStorage.getItem('chiikawa_sales_updated');
+
+            if (storedData) {
+                // アップロードされたデータを使用
+                const dailySales = JSON.parse(storedData);
+                allSalesData = Object.entries(dailySales).map(([date, sales]) => ({
+                    date,
+                    sales: parseInt(sales) || 0
+                })).sort((a, b) => a.date.localeCompare(b.date));
+
+                // データソース表示を更新
+                const date = new Date(storedUpdated);
+                document.getElementById('dataSource').innerHTML = `
+                    <span class="badge">アップロード済み</span>
+                    <span>最終更新: ${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP')} | ${allSalesData.length}日分</span>
+                `;
+            } else {
+                // 静的データを使用
+                allSalesData = salesData.map(d => ({
+                    date: d.date,
+                    sales: d.sales
+                }));
+            }
+
+            // 月別にグループ化
+            monthlyData = {};
+            allSalesData.forEach(d => {
+                const month = d.date.substring(0, 7); // YYYY-MM
+                if (!monthlyData[month]) {
+                    monthlyData[month] = [];
+                }
+                monthlyData[month].push(d);
+            });
+        }
+
+        // 月別タブを作成
+        function createMonthTabs() {
+            const container = document.getElementById('monthTabs');
+            const months = Object.keys(monthlyData).sort();
+
+            // 「全期間」ボタンを追加
+            let html = '<button class="month-tab" data-month="all">全期間</button>';
+
+            months.forEach(month => {
+                const [year, m] = month.split('-');
+                const label = `${year}年${parseInt(m)}月`;
+                html += `<button class="month-tab" data-month="${month}">${label}</button>`;
+            });
+
+            container.innerHTML = html;
+
+            // 最新の月を選択
+            const latestMonth = months[months.length - 1];
+            currentMonth = latestMonth;
+
+            // イベントリスナー
+            container.querySelectorAll('.month-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    container.querySelectorAll('.month-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentMonth = tab.dataset.month;
+                    updateDailyChart();
+                });
+            });
+
+            // 最新月をアクティブに
+            const latestTab = container.querySelector(`[data-month="${latestMonth}"]`);
+            if (latestTab) latestTab.classList.add('active');
+        }
+
+        // 統計を更新
+        function updateStats() {
+            const total = allSalesData.reduce((sum, d) => sum + d.sales, 0);
+            const days = allSalesData.length;
+            const avg = Math.round(total / days);
+            const maxDay = allSalesData.reduce((max, d) => d.sales > max.sales ? d : max, allSalesData[0]);
+            const minDay = allSalesData.reduce((min, d) => d.sales < min.sales ? d : min, allSalesData[0]);
+
+            document.getElementById('totalSales').textContent = '¥' + total.toLocaleString();
+            document.getElementById('totalDays').textContent = days + '日間';
+            document.getElementById('avgSales').textContent = '¥' + avg.toLocaleString();
+            document.getElementById('maxSales').textContent = '¥' + maxDay.sales.toLocaleString();
+            document.getElementById('maxDate').textContent = formatDate(maxDay.date);
+            document.getElementById('minSales').textContent = '¥' + minDay.sales.toLocaleString();
+            document.getElementById('minDate').textContent = formatDate(minDay.date);
+        }
+
+        // 日付フォーマット
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}/${date.getDate()}(${['日', '月', '火', '水', '木', '金', '土'][date.getDay()]})`;
+        }
+
+        // グラフ作成
+        function createCharts() {
+            updateDailyChart();
+            createMonthlyChart();
+            createWeekdayChart();
+        }
+
+        // 日別グラフ更新
+        function updateDailyChart() {
+            const ctx = document.getElementById('dailyChart').getContext('2d');
+
+            let data, labels, title;
+
+            if (currentMonth === 'all') {
+                // 全期間表示
+                data = allSalesData.map(d => d.sales);
+                labels = allSalesData.map(d => {
+                    const date = new Date(d.date);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                });
+                title = '全期間 日別売上';
+            } else {
+                // 特定月の表示
+                const monthData = monthlyData[currentMonth] || [];
+
+                // 1日〜31日の配列を作成
+                const [year, month] = currentMonth.split('-');
+                const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+
+                labels = [];
+                data = [];
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${currentMonth}-${String(day).padStart(2, '0')}`;
+                    const dayData = monthData.find(d => d.date === dateStr);
+                    labels.push(`${day}日`);
+                    data.push(dayData ? dayData.sales : 0);
+                }
+
+                title = `${year}年${parseInt(month)}月 日別売上`;
+            }
+
+            document.getElementById('chartTitle').textContent = title;
+
+            // サマリー更新
+            const monthTotal = data.reduce((a, b) => a + b, 0);
+            const nonZeroDays = data.filter(d => d > 0).length;
+            const monthAvg = nonZeroDays > 0 ? Math.round(monthTotal / nonZeroDays) : 0;
+
+            document.getElementById('monthTotal').textContent = '¥' + monthTotal.toLocaleString();
+            document.getElementById('monthDays').textContent = nonZeroDays + '日';
+            document.getElementById('monthAvg').textContent = '¥' + monthAvg.toLocaleString();
+
+            if (dailyChart) dailyChart.destroy();
+
+            dailyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '売上高',
+                        data,
+                        backgroundColor: data.map(d => d > 0 ? 'rgba(255, 182, 193, 0.8)' : 'rgba(200, 200, 200, 0.3)'),
+                        borderColor: data.map(d => d > 0 ? '#FFB6C1' : '#ccc'),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ctx.raw > 0 ? '¥' + ctx.raw.toLocaleString() : 'データなし'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (val) => '¥' + (val / 10000).toFixed(0) + '万'
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 月別グラフ
+        function createMonthlyChart() {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            const months = Object.keys(monthlyData).sort();
+
+            const data = months.map(month => {
+                return monthlyData[month].reduce((sum, d) => sum + d.sales, 0);
+            });
+
+            const labels = months.map(month => {
+                const [year, m] = month.split('-');
+                return `${parseInt(m)}月`;
+            });
+
+            const colors = ['rgba(255, 182, 193, 0.8)', 'rgba(135, 206, 235, 0.8)', 'rgba(152, 216, 170, 0.8)', 'rgba(255, 224, 102, 0.8)'];
+
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '月間売上',
+                        data,
+                        backgroundColor: months.map((_, i) => colors[i % colors.length]),
+                        borderColor: ['#FFB6C1', '#87CEEB', '#98D8AA', '#FFE066'],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => '¥' + ctx.raw.toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (val) => '¥' + (val / 10000).toFixed(0) + '万'
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 曜日別グラフ
+        function createWeekdayChart() {
+            const ctx = document.getElementById('weekdayChart').getContext('2d');
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekdaySales = [0, 0, 0, 0, 0, 0, 0];
+            const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+            allSalesData.forEach(d => {
+                const day = new Date(d.date).getDay();
+                weekdaySales[day] += d.sales;
+                weekdayCounts[day]++;
+            });
+
+            const averages = weekdaySales.map((sum, i) => weekdayCounts[i] > 0 ? Math.round(sum / weekdayCounts[i]) : 0);
+
+            weekdayChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: weekdays.map(w => w + '曜日'),
+                    datasets: [{
+                        label: '平均売上',
+                        data: averages,
+                        backgroundColor: averages.map((_, i) =>
+                            i === 0 || i === 6 ? 'rgba(255, 182, 193, 0.8)' : 'rgba(135, 206, 235, 0.8)'
+                        ),
+                        borderColor: averages.map((_, i) =>
+                            i === 0 || i === 6 ? '#FFB6C1' : '#87CEEB'
+                        ),
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => '平均: ¥' + ctx.raw.toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (val) => '¥' + (val / 10000).toFixed(0) + '万'
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

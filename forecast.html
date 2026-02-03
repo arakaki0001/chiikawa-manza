@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在庫予測・発注アラート | ちいかわ在庫管理システム</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-full);
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .settings-panel {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .setting-group label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .setting-group input {
+            width: 80px;
+            padding: 0.5rem;
+            border: 2px solid var(--primary-light);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .setting-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .forecast-table td.status-critical {
+            background: #FFCCCB !important;
+        }
+
+        .forecast-table tr.status-critical {
+            background: #FFF0F0;
+        }
+
+        .forecast-table tr.status-warning {
+            background: #FFF8E6;
+        }
+
+        .forecast-table tr.status-attention {
+            background: #FFFBF0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.critical {
+            background: var(--danger);
+            color: white;
+        }
+
+        .status-badge.warning {
+            background: #FFA500;
+            color: white;
+        }
+
+        .status-badge.attention {
+            background: var(--warning);
+            color: #333;
+        }
+
+        .status-badge.good {
+            background: var(--accent);
+            color: white;
+        }
+
+        .status-badge.no_sales {
+            background: #E0E0E0;
+            color: #666;
+        }
+
+        .days-cell {
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .days-cell.critical {
+            color: var(--danger);
+        }
+
+        .days-cell.warning {
+            color: #FFA500;
+        }
+
+        .days-cell.attention {
+            color: #CC9900;
+        }
+
+        .days-cell.good {
+            color: var(--accent);
+        }
+
+        .timeline-bar {
+            height: 8px;
+            background: var(--primary-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.25rem;
+        }
+
+        .timeline-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .timeline-fill.critical {
+            background: var(--danger);
+        }
+
+        .timeline-fill.warning {
+            background: #FFA500;
+        }
+
+        .timeline-fill.attention {
+            background: var(--warning);
+        }
+
+        .timeline-fill.good {
+            background: var(--accent);
+        }
+
+        .reorder-now {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--primary-light);
+            border-radius: var(--radius-full);
+            background: var(--bg-main);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+        }
+
+        .filter-tab:hover {
+            background: var(--primary-light);
+        }
+
+        .filter-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            .settings-panel {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .setting-group {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .filter-tabs {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 0.5rem;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .filter-tab {
+                flex-shrink: 0;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            /* テーブルをカード形式に */
+            .forecast-table thead {
+                display: none;
+            }
+
+            .forecast-table tbody {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .forecast-table tbody tr {
+                display: flex;
+                flex-wrap: wrap;
+                background: var(--bg-card);
+                border-radius: var(--radius-md);
+                padding: 1rem;
+                box-shadow: var(--shadow-sm);
+                border-left: 4px solid var(--primary);
+            }
+
+            .forecast-table tbody tr.status-critical {
+                border-left-color: var(--danger);
+            }
+
+            .forecast-table tbody tr.status-warning {
+                border-left-color: #FFA500;
+            }
+
+            .forecast-table tbody tr.status-attention {
+                border-left-color: var(--warning);
+            }
+
+            .forecast-table tbody tr.status-good {
+                border-left-color: var(--accent);
+            }
+
+            .forecast-table tbody td {
+                border: none;
+                padding: 0.25rem 0;
+            }
+
+            /* カード内レイアウト */
+            .forecast-table tbody td:nth-child(1) {
+                /* 商品名 */
+                width: 100%;
+                order: 1;
+                margin-bottom: 0.5rem;
+            }
+
+            .forecast-table tbody td:nth-child(2) {
+                /* カテゴリ */
+                order: 2;
+                margin-right: auto;
+            }
+
+            .forecast-table tbody td:nth-child(9) {
+                /* ステータス */
+                order: 3;
+            }
+
+            .forecast-table tbody td:nth-child(3) {
+                /* 現在庫 */
+                width: 33%;
+                order: 4;
+                text-align: center !important;
+            }
+
+            .forecast-table tbody td:nth-child(3)::before {
+                content: '現在庫';
+                display: block;
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                font-weight: normal;
+            }
+
+            .forecast-table tbody td:nth-child(4) {
+                /* 日平均 */
+                width: 33%;
+                order: 5;
+                text-align: center !important;
+            }
+
+            .forecast-table tbody td:nth-child(4)::before {
+                content: '日平均';
+                display: block;
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+            }
+
+            .forecast-table tbody td:nth-child(5) {
+                /* 在庫切れまで */
+                width: 33%;
+                order: 6;
+            }
+
+            .forecast-table tbody td:nth-child(5)::before {
+                content: '残り';
+                display: block;
+                font-size: 0.7rem;
+                color: var(--text-secondary);
+                font-weight: normal;
+            }
+
+            .forecast-table tbody td:nth-child(6),
+            .forecast-table tbody td:nth-child(7),
+            .forecast-table tbody td:nth-child(8) {
+                /* 日付列・6ヶ月後 */
+                display: none;
+            }
+
+            .timeline-bar {
+                display: none;
+            }
+
+            .days-cell {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🔮</span>
+                <div>
+                    <h1>在庫予測・発注アラート</h1>
+                    <span class="logo-subtitle">万座毛ショップ</span>
+                </div>
+            </div>
+            <div class="header-info">
+                <a href="index.html" class="nav-link">📦 在庫管理</a>
+                <a href="sales.html" class="nav-link">📈 売上推移</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main">
+        <!-- ダッシュボード -->
+        <section class="dashboard">
+            <div class="stat-card low">
+                <div class="stat-icon">🚨</div>
+                <div class="stat-label">要緊急発注</div>
+                <div class="stat-value" id="criticalCount">-</div>
+                <div class="stat-change">7日以内に在庫切れ</div>
+            </div>
+            <div class="stat-card categories">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-label">要注意</div>
+                <div class="stat-value" id="warningCount">-</div>
+                <div class="stat-change">30日以内に在庫切れ</div>
+            </div>
+            <div class="stat-card value">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">6ヶ月後在庫切れ予測</div>
+                <div class="stat-value" id="stockoutIn6Months">-</div>
+            </div>
+            <div class="stat-card total">
+                <div class="stat-icon">✅</div>
+                <div class="stat-label">安全在庫</div>
+                <div class="stat-value" id="safeCount">-</div>
+                <div class="stat-change">60日以上の在庫</div>
+            </div>
+        </section>
+
+        <!-- 設定パネル -->
+        <section class="settings-panel">
+            <div class="setting-group">
+                <label>リードタイム（発注〜納品）</label>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <input type="number" id="leadTime" value="14" min="1" max="90">
+                    <span>日</span>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>安全在庫日数</label>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <input type="number" id="safetyDays" value="7" min="0" max="30">
+                    <span>日</span>
+                </div>
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">すべて</button>
+                <button class="filter-tab" data-filter="critical">🚨 緊急</button>
+                <button class="filter-tab" data-filter="warning">⚠️ 注意</button>
+                <button class="filter-tab" data-filter="attention">📌 確認</button>
+                <button class="filter-tab" data-filter="good">✅ 安全</button>
+            </div>
+        </section>
+
+        <!-- 予測テーブル -->
+        <section class="table-container">
+            <div class="table-header">
+                <h2 class="table-title">📋 在庫予測一覧</h2>
+                <span class="result-count" id="resultCount">-件</span>
+            </div>
+            <table class="inventory-table forecast-table">
+                <thead>
+                    <tr>
+                        <th>商品名</th>
+                        <th>カテゴリ</th>
+                        <th>現在庫</th>
+                        <th>日平均販売</th>
+                        <th>在庫切れまで</th>
+                        <th>在庫切れ予測日</th>
+                        <th>発注推奨日</th>
+                        <th>6ヶ月後在庫</th>
+                        <th>ステータス</th>
+                    </tr>
+                </thead>
+                <tbody id="forecastBody">
+                    <tr>
+                        <td colspan="9" class="loading">読み込み中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>🐾 ちいかわ在庫管理システム v1.0 | 万座毛ショップ</p>
+    </footer>
+
+    <!-- スクリプト -->
+    <script src="inventory_data.js"></script>
+    <script src="forecast_data.js"></script>
+    <script>
+        let currentFilter = 'all';
+        let forecasts = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateForecasts();
+            setupEventListeners();
+        });
+
+        function updateForecasts() {
+            const leadTime = parseInt(document.getElementById('leadTime').value) || 14;
+            const safetyDays = parseInt(document.getElementById('safetyDays').value) || 7;
+
+            forecasts = getAllForecasts(leadTime, safetyDays);
+            updateStats();
+            renderTable();
+        }
+
+        function updateStats() {
+            const critical = forecasts.filter(f => f.status === 'critical').length;
+            const warning = forecasts.filter(f => f.status === 'warning').length;
+            const attention = forecasts.filter(f => f.status === 'attention').length;
+            const good = forecasts.filter(f => f.status === 'good' || f.status === 'no_sales').length;
+            const stockoutIn6 = forecasts.filter(f => f.stock6MonthsLater === 0 && f.status !== 'no_sales').length;
+
+            document.getElementById('criticalCount').textContent = critical;
+            document.getElementById('warningCount').textContent = warning;
+            document.getElementById('stockoutIn6Months').textContent = stockoutIn6 + '商品';
+            document.getElementById('safeCount').textContent = good;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('forecastBody');
+
+            let filtered = forecasts;
+            if (currentFilter !== 'all') {
+                filtered = forecasts.filter(f => f.status === currentFilter);
+            }
+
+            // ステータス優先度でソート（緊急 > 注意 > 確認 > 安全）
+            const statusOrder = { critical: 0, warning: 1, attention: 2, good: 3, no_sales: 4 };
+            filtered.sort((a, b) => {
+                if (statusOrder[a.status] !== statusOrder[b.status]) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
+                return a.daysUntilStockout - b.daysUntilStockout;
+            });
+
+            document.getElementById('resultCount').textContent = filtered.length + '件';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><div class="icon">📦</div><p>該当する商品がありません</p></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(f => {
+                const stockoutDateStr = f.stockoutDate ? formatDate(f.stockoutDate) : '-';
+                const reorderDateStr = f.reorderDate ? formatDate(f.reorderDate) : '-';
+                const isReorderNow = f.reorderDate && f.reorderDate <= new Date();
+                const timelineWidth = Math.min(100, Math.max(5, (f.daysUntilStockout / 180) * 100));
+
+                return `
+          <tr class="status-${f.status}">
+            <td>
+              <div class="product-name">
+                <span class="name">${escapeHtml(f.name)}</span>
+                <span class="jan">${f.jan}</span>
+              </div>
+            </td>
+            <td><span class="category-badge ${f.category}">${f.category}</span></td>
+            <td style="text-align:center;font-weight:600;">${f.stock.toLocaleString()}</td>
+            <td style="text-align:center;">${f.dailyAverage.toFixed(1)}</td>
+            <td class="days-cell ${f.status}">
+              ${f.daysUntilStockout === Infinity ? '∞' : f.daysUntilStockout + '日'}
+              <div class="timeline-bar">
+                <div class="timeline-fill ${f.status}" style="width:${timelineWidth}%"></div>
+              </div>
+            </td>
+            <td style="text-align:center;">${stockoutDateStr}</td>
+            <td style="text-align:center;" class="${isReorderNow ? 'reorder-now' : ''}">
+              ${isReorderNow ? '🚨 今すぐ発注' : reorderDateStr}
+            </td>
+            <td style="text-align:center;font-weight:600;">${f.stock6MonthsLater.toLocaleString()}</td>
+            <td><span class="status-badge ${f.status}">${getStatusLabel(f.status)}</span></td>
+          </tr>
+        `;
+            }).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                critical: '緊急',
+                warning: '注意',
+                attention: '確認',
+                good: '安全',
+                no_sales: '販売なし'
+            };
+            return labels[status] || status;
+        }
+
+        function formatDate(date) {
+            if (!date) return '-';
+            const d = new Date(date);
+            return `${d.getMonth() + 1}/${d.getDate()}`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setupEventListeners() {
+            // 設定変更
+            document.getElementById('leadTime').addEventListener('change', updateForecasts);
+            document.getElementById('safetyDays').addEventListener('change', updateForecasts);
+
+            // フィルタータブ
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentFilter = tab.dataset.filter;
+                    renderTable();
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

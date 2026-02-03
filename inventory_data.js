@@ -1,0 +1,52 @@
+// ちいかわ在庫データ
+// 商品マスタ + 棚卸表データ統合
+
+const inventoryData = [
+    { id: 1, jan: "4582662917828", name: "ちいかわ もちっとぬいぐるみS （ちいかわ）", category: "ぬいぐるみ", stock: 19, costExTax: 1292, costInTax: 1421, priceExTax: 1900, priceInTax: 2090 },
+    { id: 2, jan: "4582662917835", name: "ちいかわ もちっとぬいぐるみS （ハチワレ）", category: "ぬいぐるみ", stock: 38, costExTax: 1292, costInTax: 1421, priceExTax: 1900, priceInTax: 2090 },
+    { id: 3, jan: "4582662917842", name: "ちいかわ もちっとぬいぐるみS （うさぎ）", category: "ぬいぐるみ", stock: 45, costExTax: 1292, costInTax: 1421, priceExTax: 1900, priceInTax: 2090 },
+    { id: 4, jan: "4582662917866", name: "ちいかわ もちっとぬいぐるみS （モモンガ）", category: "ぬいぐるみ", stock: 43, costExTax: 1292, costInTax: 1421, priceExTax: 1900, priceInTax: 2090 },
+    { id: 5, jan: "4582662917859", name: "ちいかわ もちっとぬいぐるみS （くりまんじゅう）", category: "ぬいぐるみ", stock: 45, costExTax: 1292, costInTax: 1421, priceExTax: 1900, priceInTax: 2090 },
+    { id: 6, jan: "4582662919914", name: "ちいかわ もちっとぬいぐるみS （シーサー）", category: "ぬいぐるみ", stock: 24, costExTax: 1292, costInTax: 1421, priceExTax: 1900, priceInTax: 2090 },
+    { id: 7, jan: "4582662984219", name: "ちいかわ ぬいぐるみS（ラッコ）", category: "ぬいぐるみ", stock: 42, costExTax: 1428, costInTax: 1571, priceExTax: 2100, priceInTax: 2310 },
+    { id: 8, jan: "4582662917873", name: "ちいかわ もちっとぷちミニマスコット （ちいかわ）", category: "マスコット", stock: 85, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 9, jan: "4582662917880", name: "ちいかわ もちっとぷちミニマスコット （ハチワレ）", category: "マスコット", stock: 78, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 10, jan: "4582662917897", name: "ちいかわ もちっとぷちミニマスコット （うさぎ）", category: "マスコット", stock: 83, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 11, jan: "4582662917910", name: "ちいかわ もちっとぷちミニマスコット （モモンガ）", category: "マスコット", stock: 79, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 12, jan: "4582662917903", name: "ちいかわ もちっとぷちミニマスコット （くりまんじゅう）", category: "マスコット", stock: 85, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 13, jan: "4582662919921", name: "ちいかわ もちっとぷちミニマスコット （シーサー）", category: "マスコット", stock: 4, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 14, jan: "4589468440802", name: "ちいかわ ぷちミニマスコット（ラッコ）", category: "マスコット", stock: 81, costExTax: 816, costInTax: 898, priceExTax: 1200, priceInTax: 1320 },
+    { id: 15, jan: "4571609336778", name: "SH ダイカットマスキングテープ なんくるないさ〜!!", category: "雑貨", stock: 74, costExTax: 544, costInTax: 598, priceExTax: 800, priceInTax: 880 },
+    { id: 16, jan: "4571609336785", name: "SH ダイカットマスキングテープ ピ～ゥ～イッ", category: "雑貨", stock: 84, costExTax: 544, costInTax: 598, priceExTax: 800, priceInTax: 880 },
+    { id: 17, jan: "4571609337935", name: "SH 大きめトートバッグ ハイビスカス", category: "バッグ", stock: 95, costExTax: 2040, costInTax: 2244, priceExTax: 3000, priceInTax: 3300 },
+    { id: 18, jan: "4571609364344", name: "ちいかわ×オリオンビール SH 手触りの良い薄手なフェイスタオル ハイビスカス", category: "雑貨", stock: 919, costExTax: 1260, costInTax: 1386, priceExTax: 1800, priceInTax: 1980 },
+    { id: 19, jan: "4571609364191", name: "ちいかわ×オリオンビール SH 大きめトートバッグ ア...ぅん…", category: "バッグ", stock: 157, costExTax: 2310, costInTax: 2541, priceExTax: 3300, priceInTax: 3630 },
+    { id: 20, jan: "4571609364207", name: "ちいかわ×オリオンビール SH ダイカットアクリルマグネット ビール缶", category: "雑貨", stock: 890, costExTax: 420, costInTax: 462, priceExTax: 600, priceInTax: 660 },
+    { id: 21, jan: "4571609364221", name: "ちいかわ×オリオンビール SH スマホに貼れるサイズのステッカー ハイビスカス", category: "ステッカー", stock: 709, costExTax: 210, costInTax: 231, priceExTax: 300, priceInTax: 330 },
+    { id: 22, jan: "4571609364238", name: "ちいかわ×オリオンビール SH スマホに貼れるサイズのステッカー ビール缶", category: "ステッカー", stock: 732, costExTax: 210, costInTax: 231, priceExTax: 300, priceInTax: 330 },
+    { id: 23, jan: "4571609364245", name: "ちいかわ×オリオンビール SH スマホに貼れるサイズのステッカー くりまんじゅう", category: "ステッカー", stock: 391, costExTax: 210, costInTax: 231, priceExTax: 300, priceInTax: 330 },
+    { id: 24, jan: "4571609364252", name: "ちいかわ×オリオンビール SH スマホに貼れるサイズのステッカー ア...ぅん…", category: "ステッカー", stock: 648, costExTax: 210, costInTax: 231, priceExTax: 300, priceInTax: 330 },
+    { id: 25, jan: "4571609364214", name: "ちいかわ×オリオンビール SH ホログラムクリアファイル ハイビスカス", category: "雑貨", stock: 886, costExTax: 245, costInTax: 270, priceExTax: 350, priceInTax: 385 },
+    { id: 26, jan: "4571609369929", name: "ちいかわ×オリオンビール SH Tシャツ S ハイビスカス", category: "Tシャツ", stock: 579, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 27, jan: "4571609364269", name: "ちいかわ×オリオンビール SH Tシャツ M ハイビスカス", category: "Tシャツ", stock: 512, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 28, jan: "4571609364276", name: "ちいかわ×オリオンビール SH Tシャツ L ハイビスカス", category: "Tシャツ", stock: 304, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 29, jan: "4571609364283", name: "ちいかわ×オリオンビール SH Tシャツ XL ハイビスカス", category: "Tシャツ", stock: 218, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 30, jan: "4571609364290", name: "ちいかわ×オリオンビール SH Tシャツ 2XL ハイビスカス", category: "Tシャツ", stock: 200, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 31, jan: "4571609369936", name: "ちいかわ×オリオンビール SH Tシャツ S ア...ぅん…", category: "Tシャツ", stock: 410, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 32, jan: "4571609364306", name: "ちいかわ×オリオンビール SH Tシャツ M ア...ぅん…", category: "Tシャツ", stock: 706, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 33, jan: "4571609364313", name: "ちいかわ×オリオンビール SH Tシャツ L ア...ぅん…", category: "Tシャツ", stock: 609, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 34, jan: "4571609364320", name: "ちいかわ×オリオンビール SH Tシャツ XL ア...ぅん…", category: "Tシャツ", stock: 176, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 35, jan: "4571609364337", name: "ちいかわ×オリオンビール SH Tシャツ 2XL ア...ぅん…", category: "Tシャツ", stock: 135, costExTax: 3150, costInTax: 3465, priceExTax: 4500, priceInTax: 4950 },
+    { id: 36, jan: "4571609364184", name: "ちいかわ×オリオンビール SH おみやげバッグ ハイビスカス", category: "バッグ", stock: 794, costExTax: 800, costInTax: 880, priceExTax: 1000, priceInTax: 1100 },
+    { id: 37, jan: "4571670330828", name: "ちいかわ マンガスタンプ２ BOX", category: "雑貨", stock: 84, costExTax: 276, costInTax: 304, priceExTax: 400, priceInTax: 440 },
+    { id: 38, jan: "4571670330996", name: "ちいかわ アクリルネームタグ BOX", category: "雑貨", stock: 203, costExTax: 276, costInTax: 304, priceExTax: 400, priceInTax: 440 },
+    { id: 39, jan: "4571670330156", name: "ちいかわ おかおのスクイーズ［ちいかわ］ BOX", category: "雑貨", stock: 206, costExTax: 345, costInTax: 380, priceExTax: 500, priceInTax: 550 },
+    { id: 40, jan: "4571670330170", name: "ちいかわ おかおのスクイーズ［ハチワレ］ BOX", category: "雑貨", stock: 193, costExTax: 345, costInTax: 380, priceExTax: 500, priceInTax: 550 },
+    { id: 41, jan: "4571670330194", name: "ちいかわ おかおのスクイーズ［うさぎ］ BOX", category: "雑貨", stock: 185, costExTax: 345, costInTax: 380, priceExTax: 500, priceInTax: 550 },
+    { id: 42, jan: "4582662959354", name: "SH なんくるないさ～!!マスコット（ちいかわ）", category: "マスコット", stock: 162, costExTax: 1224, costInTax: 1346, priceExTax: 1800, priceInTax: 1980 },
+    { id: 43, jan: "4582662959378", name: "SH なんくるないさ〜!!マスコット（うさぎ）", category: "マスコット", stock: 66, costExTax: 1224, costInTax: 1346, priceExTax: 1800, priceInTax: 1980 },
+    { id: 44, jan: "4582662959361", name: "SH なんくるないさ〜!!マスコット（ハチワレ）", category: "マスコット", stock: 150, costExTax: 1224, costInTax: 1346, priceExTax: 1800, priceInTax: 1980 }
+];
+
+// カテゴリ一覧を取得
+const categories = [...new Set(inventoryData.map(item => item.category))];
