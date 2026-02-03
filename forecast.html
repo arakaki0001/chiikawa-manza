@@ -295,9 +295,10 @@
             }
 
             .forecast-table tbody td:nth-child(1) .product-name .name {
-                font-size: 0.9rem;
-                font-weight: 600;
-                line-height: 1.4;
+                font-size: 1rem;
+                /* 少し大きく */
+                font-weight: 700;
+                line-height: 1.5;
                 display: block !important;
                 visibility: visible !important;
                 color: var(--text-primary);
@@ -306,80 +307,108 @@
             }
 
             .forecast-table tbody td:nth-child(1) .product-name .jan {
-                font-size: 0.7rem;
+                font-size: 0.75rem;
                 color: var(--text-secondary);
                 font-family: monospace;
                 margin-top: 0.25rem;
+                display: block;
             }
 
             .forecast-table tbody td:nth-child(2) {
                 /* カテゴリ */
                 order: 2;
                 margin-right: auto;
+                margin-bottom: 0.5rem;
+                /* 間隔を追加 */
             }
 
             .forecast-table tbody td:nth-child(8) {
                 /* ステータス */
                 order: 3;
+                margin-bottom: 0.5rem;
+                /* 間隔を追加 */
+            }
+
+            /* データのグリッド表示エリア */
+            .forecast-table tbody td:nth-child(3),
+            .forecast-table tbody td:nth-child(4),
+            .forecast-table tbody td:nth-child(5) {
+                width: 32%;
+                /* 3等分 */
+                background: #f8f9fa;
+                /* 背景色で区別 */
+                padding: 0.5rem !important;
+                border-radius: 6px;
+                margin-bottom: 0.5rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
             }
 
             .forecast-table tbody td:nth-child(3) {
-                /* 現在庫 */
-                width: 33%;
                 order: 4;
-                text-align: center !important;
-            }
-
-            .forecast-table tbody td:nth-child(3)::before {
-                content: '現在庫';
-                display: block;
-                font-size: 0.7rem;
-                color: var(--text-secondary);
-                font-weight: normal;
             }
 
             .forecast-table tbody td:nth-child(4) {
-                /* 日平均 */
-                width: 33%;
                 order: 5;
-                text-align: center !important;
+            }
+
+            .forecast-table tbody td:nth-child(5) {
+                order: 6;
+                background: #fff0f0;
+                /* 在庫切れまでの日数は目立たせる */
+                font-weight: bold;
+                color: var(--danger);
+            }
+
+            /* ラベルのスタイル共通化 */
+            .forecast-table tbody td:nth-child(3)::before {
+                content: '現在庫';
             }
 
             .forecast-table tbody td:nth-child(4)::before {
                 content: '日平均';
-                display: block;
-                font-size: 0.7rem;
-                color: var(--text-secondary);
-            }
-
-            .forecast-table tbody td:nth-child(5) {
-                /* 在庫切れまで */
-                width: 33%;
-                order: 6;
             }
 
             .forecast-table tbody td:nth-child(5)::before {
-                content: '残り';
+                content: '在庫切れまで';
+            }
+
+            .forecast-table tbody td:nth-child(3)::before,
+            .forecast-table tbody td:nth-child(4)::before,
+            .forecast-table tbody td:nth-child(5)::before {
                 display: block;
                 font-size: 0.7rem;
                 color: var(--text-secondary);
                 font-weight: normal;
+                margin-bottom: 0.25rem;
             }
 
-            /* 在庫切れ予測日を表示 */
+            /* 在庫切れ予測日を目立たせる */
             .forecast-table tbody td:nth-child(6) {
                 width: 100%;
                 order: 7;
-                text-align: left !important;
-                margin-top: 0.5rem;
-                padding-top: 0.5rem;
-                border-top: 1px solid var(--primary-light);
+                background: #e3f2fd;
+                border: 2px solid #90caf9;
+                border-radius: 8px;
+                padding: 0.75rem !important;
+                margin-top: 0.25rem;
+                text-align: center !important;
+                font-weight: bold;
+                font-size: 1.1rem;
+                color: #1565c0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
             }
 
             .forecast-table tbody td:nth-child(6)::before {
                 content: '📅 在庫切れ予測日: ';
-                font-size: 0.8rem;
-                color: var(--text-secondary);
+                font-size: 0.9rem;
+                color: #555;
+                font-weight: normal;
             }
 
             /* 6ヶ月後在庫は非表示 */
@@ -392,7 +421,7 @@
             }
 
             .days-cell {
-                font-size: 1.1rem;
+                font-size: 1.2rem;
             }
 
             /* 印刷用スタイル */
