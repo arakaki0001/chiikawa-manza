@@ -280,30 +280,36 @@
             }
 
             /* カード内レイアウト */
+            /* カード内レイアウト */
             .forecast-table tbody td:nth-child(1) {
                 /* 商品名 */
-                width: 100%;
+                width: 100% !important;
+                display: block !important;
                 order: 1;
                 margin-bottom: 0.75rem;
-                padding-bottom: 0.5rem;
-                border-bottom: 1px solid var(--primary-light);
+                padding-bottom: 0.5rem !important;
+                border-bottom: 1px solid var(--primary-light) !important;
+                text-align: left !important;
             }
 
             .forecast-table tbody td:nth-child(1) .product-name {
                 display: flex !important;
-                flex-direction: column;
+                flex-direction: column !important;
+                width: 100% !important;
             }
 
             .forecast-table tbody td:nth-child(1) .product-name .name {
-                font-size: 1rem;
-                /* 少し大きく */
-                font-weight: 700;
+                font-size: 1.1rem !important;
+                /* さらに大きく */
+                font-weight: 700 !important;
                 line-height: 1.5;
                 display: block !important;
                 visibility: visible !important;
                 color: var(--text-primary);
                 word-break: break-all;
                 overflow-wrap: break-word;
+                opacity: 1 !important;
+                /* 透明度も確認 */
             }
 
             .forecast-table tbody td:nth-child(1) .product-name .jan {
