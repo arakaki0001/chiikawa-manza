@@ -394,7 +394,110 @@
             .days-cell {
                 font-size: 1.1rem;
             }
-        }
+
+            /* 印刷用スタイル */
+            @media print {
+                @page {
+                    size: A4 landscape;
+                    margin: 1cm;
+                }
+
+                body {
+                    background: white;
+                    font-size: 10pt;
+                }
+
+                .header,
+                .footer,
+                .settings-panel,
+                .result-count,
+                .nav-link {
+                    display: none !important;
+                }
+
+                .dashboard {
+                    display: none;
+                }
+
+                .main {
+                    padding: 0;
+                    max-width: none;
+                }
+
+                .table-container {
+                    box-shadow: none;
+                    border: none;
+                }
+
+                .table-title::after {
+                    content: ' (在庫切れ予測日順)';
+                    font-size: 0.9rem;
+                    font-weight: normal;
+                }
+
+                .inventory-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                .inventory-table th {
+                    background-color: #f0f0f0 !important;
+                    color: black !important;
+                    border: 1px solid #ccc;
+                }
+
+                .inventory-table td {
+                    border: 1px solid #ccc;
+                }
+
+                .inventory-table tr {
+                    break-inside: avoid;
+                }
+
+                /* 印刷時は全て表示 */
+                .forecast-table thead {
+                    display: table-header-group !important;
+                }
+
+                .forecast-table tbody {
+                    display: table-row-group !important;
+                }
+
+                .forecast-table tbody tr {
+                    display: table-row !important;
+                    background: white !important;
+                    box-shadow: none !important;
+                    border: 1px solid #ccc !important;
+                    border-left: none !important;
+                }
+
+                .forecast-table tbody td {
+                    display: table-cell !important;
+                    width: auto !important;
+                    text-align: left;
+                    padding: 0.5rem !important;
+                    border: 1px solid #ccc !important;
+                }
+
+                /* スマホ用擬似要素を非表示 */
+                .forecast-table tbody td::before {
+                    display: none !important;
+                }
+
+                /* 不要な要素非表示 */
+                .timeline-bar,
+                .status-badge {
+                    /* ステータスバッジは文字だけ残すかどうか、今回はそのまま表示 */
+                    border: 1px solid #ccc;
+                    background: white !important;
+                    color: black !important;
+                }
+
+                /* 印刷時も6ヶ月後在庫は表示したい場合 */
+                .forecast-table tbody td:nth-child(7) {
+                    display: table-cell !important;
+                }
+            }
     </style>
 </head>
 
@@ -454,6 +557,9 @@
                 <button class="filter-tab" data-filter="attention">📌 確認</button>
                 <button class="filter-tab" data-filter="good">✅ 安全</button>
             </div>
+            <button class="nav-link" onclick="printForecast()"
+                style="background:var(--primary);color:white;border:none;cursor:pointer;margin-left:auto;">📄
+                PDF出力（印刷）</button>
         </section>
 
         <!-- 予測テーブル -->
@@ -537,6 +643,26 @@
             document.getElementById('warningCount').textContent = warning;
             document.getElementById('stockoutIn6Months').textContent = stockoutIn6 + '商品';
             document.getElementById('safeCount').textContent = good;
+        }
+
+        // 印刷（PDF保存）機能
+        function printForecast() {
+            // 在庫切れまでの日数で昇順ソート（日数が少ない順＝予測日が近い順）
+            // Infinity（在庫切れしない）は最後に
+            forecasts.sort((a, b) => {
+                if (a.daysUntilStockout === b.daysUntilStockout) return 0;
+                if (a.daysUntilStockout === Infinity) return 1;
+                if (b.daysUntilStockout === Infinity) return -1;
+                return a.daysUntilStockout - b.daysUntilStockout;
+            });
+
+            // テーブル再描画
+            renderTable();
+
+            // 少し待ってから印刷画面を表示
+            setTimeout(() => {
+                window.print();
+            }, 100);
         }
 
         function renderTable() {
