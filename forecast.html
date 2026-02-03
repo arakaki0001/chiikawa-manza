@@ -491,9 +491,24 @@
         let forecasts = [];
 
         document.addEventListener('DOMContentLoaded', () => {
+            // localStorageから在庫数を読み込んでinventoryDataに反映
+            loadStockFromStorage();
             updateForecasts();
             setupEventListeners();
         });
+
+        // localStorageから在庫数を読み込む
+        function loadStockFromStorage() {
+            const storedStock = localStorage.getItem('chiikawa_current_stock');
+            if (storedStock) {
+                const stockData = JSON.parse(storedStock);
+                inventoryData.forEach(item => {
+                    if (stockData[item.jan] !== undefined) {
+                        item.stock = stockData[item.jan];
+                    }
+                });
+            }
+        }
 
         function updateForecasts() {
             const leadTime = parseInt(document.getElementById('leadTime').value) || 14;
