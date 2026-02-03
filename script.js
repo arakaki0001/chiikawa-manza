@@ -27,25 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     function init() {
-        loadStockFromStorage();
+        // loadStockFromStorage(); // 廃止: inventory_data.jsを正とする
         renderCategoryFilters();
         updateStats();
         renderTable();
         setupEventListeners();
         createModal();
-    }
-
-    // ローカルストレージから在庫を適用
-    function loadStockFromStorage() {
-        const storedStock = localStorage.getItem('chiikawa_current_stock');
-        if (storedStock) {
-            const stockData = JSON.parse(storedStock);
-            inventoryData.forEach(item => {
-                if (stockData[item.jan] !== undefined) {
-                    item.stock = stockData[item.jan];
-                }
-            });
-        }
     }
 
     // 在庫をローカルストレージに保存

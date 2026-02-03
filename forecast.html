@@ -669,24 +669,10 @@
         let forecasts = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            // localStorageから在庫数を読み込んでinventoryDataに反映
-            loadStockFromStorage();
+            // localStorageからの読み込みを廃止し、inventory_data.jsの値を直接使用
             updateForecasts();
             setupEventListeners();
         });
-
-        // localStorageから在庫数を読み込む
-        function loadStockFromStorage() {
-            const storedStock = localStorage.getItem('chiikawa_current_stock');
-            if (storedStock) {
-                const stockData = JSON.parse(storedStock);
-                inventoryData.forEach(item => {
-                    if (stockData[item.jan] !== undefined) {
-                        item.stock = stockData[item.jan];
-                    }
-                });
-            }
-        }
 
         function updateForecasts() {
             // 固定値を使用（リードタイム14日、安全在庫7日）

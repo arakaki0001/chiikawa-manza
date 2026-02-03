@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
         rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="inventory_data.js"></script>
     <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
@@ -291,7 +294,7 @@
 
             <!-- 棚卸表Excel -->
             <div class="upload-card">
-                <h2>📋 棚卸表（Excel）</h2>
+                <h2>📋 棚卸表（Excel）から更新データを作成</h2>
                 <div class="drop-zone" id="inventoryDropZone">
                     <div class="icon">📁</div>
                     <p>Excelファイルをドラッグ&ドロップ</p>
@@ -299,7 +302,7 @@
                     <span class="filename" id="inventoryFilename"></span>
                 </div>
                 <input type="file" class="file-input" id="inventoryFileInput" accept=".xlsx,.xls">
-                <button class="upload-btn" id="inventoryUploadBtn" disabled>データを更新</button>
+                <button class="upload-btn" id="inventoryUploadBtn" disabled>更新ファイルをダウンロード</button>
                 <div class="status-info info" id="inventoryStatus">
                     <span id="inventoryLastUpdate">最終更新: 未読み込み</span>
                 </div>
@@ -313,8 +316,8 @@
             <ol>
                 <li>Squareからエクスポートした売上CSVファイル（<code>商品-YYYY-MM-DD.csv</code>）をドラッグ&ドロップ</li>
                 <li>最新の棚卸表Excelファイルをドラッグ&ドロップ</li>
-                <li>「データを更新」ボタンをクリック</li>
-                <li>データはブラウザのローカルストレージに保存されます</li>
+                <li>「データ更新ファイルをダウンロード」ボタンをクリック</li>
+                <li>ダウンロードされた <code>inventory_data.js</code> で、元のファイルを上書き保存してください</li>
             </ol>
             <div class="status-info info" style="margin-top:1rem;">
                 💡 <strong>ヒント:</strong> 週に1回程度、最新の売上データをアップロードすると、在庫予測の精度が向上します。
@@ -535,6 +538,13 @@
             const status = document.getElementById('inventoryStatus');
             const preview = document.getElementById('inventoryPreview');
 
+            // inventoryDataチェック
+            if (typeof inventoryData === 'undefined') {
+                status.className = 'status-info error';
+                status.innerHTML = '❌ システムデータの読み込みに失敗しています。ページをリロードしてください。';
+                return;
+            }
+
             if (!status || !preview) {
                 console.error('DOM elements not found');
                 return;
@@ -551,55 +561,93 @@
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                    // データ行を抽出（ヘッダーを探す）
+                    // ヘッダー行とカラムインデックスの特定
                     let headerRow = -1;
+                    let colIndex = { jan: -1, stock: -1 };
+
                     for (let i = 0; i < json.length; i++) {
-                        if (json[i] && json[i][0] === 'No.' && json[i][1] === '商品名') {
+                        const row = json[i];
+                        if (row && row.includes('JAN') && row.includes('在庫数')) {
                             headerRow = i;
+                            row.forEach((col, idx) => {
+                                if (col === 'JAN') colIndex.jan = idx;
+                                if (col === '在庫数') colIndex.stock = idx;
+                            });
                             break;
                         }
                     }
 
-                    if (headerRow === -1) {
-                        throw new Error('棚卸表のフォーマットを認識できませんでした');
+                    if (headerRow === -1 || colIndex.jan === -1 || colIndex.stock === -1) {
+                        throw new Error('JANコード列または在庫数列が見つかりません');
                     }
 
-                    const inventoryItems = [];
+                    // 元データをディープコピー
+                    const updatedInventory = JSON.parse(JSON.stringify(inventoryData));
+                    let updateCount = 0;
+                    const previewItems = [];
+                    // 旧変数（エラー回避用ダミー）
+                    const stockUpdates = {};
+
+                    // Excelデータで上書き
                     for (let i = headerRow + 1; i < json.length; i++) {
                         const row = json[i];
-                        if (row && row[0] && !String(row[0]).includes('合計')) {
-                            inventoryItems.push({
-                                no: row[0],
-                                name: row[1],
-                                stock: parseInt(String(row[2]).replace(/,/g, '')) || 0,
-                                cost: row[3],
-                                amount: row[4]
-                            });
+                        if (row && row[colIndex.jan] && String(row[0]) !== '合計') {
+                            const jan = String(row[colIndex.jan]).trim();
+                            const stock = parseInt(String(row[colIndex.stock]).replace(/,/g, '')) || 0;
+                            // const name = row[colIndex.name] || '不明な商品'; // 不要
+
+                            // JANコードが一致する商品を更新
+                            const targetItem = updatedInventory.find(item => item.jan === jan);
+                            if (targetItem) {
+                                targetItem.stock = stock;
+                                updateCount++;
+                                if (previewItems.length < 10) {
+                                    previewItems.push({ jan, name: targetItem.name, stock });
+                                }
+                            }
                         }
                     }
 
-                    // ローカルストレージに保存
-                    localStorage.setItem('chiikawa_inventory_data', JSON.stringify(inventoryItems));
-                    localStorage.setItem('chiikawa_inventory_updated', new Date().toISOString());
+                    // 更新ファイルの生成 (inventory_data.js)
+                    const fileContent = `// ちいかわ在庫データ\n// 商品マスタ + 棚卸表データ統合\n\nconst inventoryData = ${JSON.stringify(updatedInventory, null, 4)};\n\n// カテゴリ一覧を取得\nconst categories = [...new Set(inventoryData.map(item => item.category))];\n`;
+
+                    const blob = new Blob([fileContent], { type: 'text/javascript' });
+                    const url = URL.createObjectURL(blob);
+
+                    // ダウンロードリンクを生成してクリック
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'inventory_data.js';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
 
                     // プレビュー表示
                     preview.innerHTML = `
+                        <div style="margin-bottom:1rem;padding:0.5rem;background:#E8F4FD;border:1px solid #B8E2F2;border-radius:8px;color:#0D6EFD;font-weight:600;">
+                            ⬇️ inventory_data.js をダウンロードしました。<br>
+                            このファイルを現在のフォルダに上書き保存してください。
+                        </div>
                         <table>
-                            <thead><tr><th>No.</th><th>商品名</th><th>在庫数</th></tr></thead>
+                            <thead><tr><th>JAN</th><th>商品名</th><th>更新後在庫</th></tr></thead>
                             <tbody>
-                                ${inventoryItems.slice(0, 10).map(item => `<tr><td>${item.no}</td><td>${item.name}</td><td>${item.stock}</td></tr>`).join('')}
+                                ${previewItems.map(item => `<tr><td>${item.jan}</td><td>${item.name}</td><td>${item.stock}</td></tr>`).join('')}
                             </tbody>
                         </table>
-                        <p style="margin-top:1rem;color:var(--text-secondary);">※ 先頭10件を表示（全${inventoryItems.length}件）</p>
+                        <p style="margin-top:1rem;color:var(--text-secondary);">※ 更新された先頭10件を表示（全${updateCount}件更新）</p>
                     `;
 
                     status.className = 'status-info success';
-                    status.innerHTML = `✅ ${inventoryItems.length}件の在庫データを読み込みました`;
+                    status.innerHTML = `✅ ファイル作成完了！ ダウンロードされたファイルを上書きしてください`;
 
+                    // 一応メタデータ更新
+                    localStorage.setItem('chiikawa_inventory_updated', new Date().toISOString());
                     loadLastUpdateTimes();
                 } catch (err) {
                     status.className = 'status-info error';
-                    status.innerHTML = '❌ ファイルの解析に失敗しました: ' + err.message;
+                    status.innerHTML = '❌ 更新ファイルの作成に失敗しました: ' + err.message;
+                    console.error(err);
                 }
             };
             reader.onerror = () => {
